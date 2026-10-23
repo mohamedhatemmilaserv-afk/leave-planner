@@ -1,0 +1,14 @@
+{
+  "name": "united-pharmacy-leave-planner",
+  "version": "1.0.0",
+  "description": "United Pharmacy Shift and Leave Planning System with Cloud Firebase Realtime Sync",
+  "scripts": {
+    "serve": "npx firebase-tools serve --only hosting",
+    "deploy": "npx firebase-tools deploy",
+    "deploy:hosting": "npx firebase-tools deploy --only hosting",
+    "deploy:firestore": "npx firebase-tools deploy --only firestore"
+  },
+  "keywords": ["firebase", "pharmacy", "roster", "leave-planner"],
+  "author": "United Pharmacy",
+  "license": "ISC"
+}

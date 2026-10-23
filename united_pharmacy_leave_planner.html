@@ -1,0 +1,2407 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>إدارة الورديات والإجازات | صيدليات المتحدة</title>
+
+<!-- Google Fonts: Cairo with heavy contrast weights -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+<!-- Official Firebase SDK (Compat v10 for full browser compatibility) -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<style>
+  /* ====================================================
+     DESIGN SYSTEM & COLOR TOKENS
+     ==================================================== */
+  :root {
+    --font-main: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, sans-serif;
+    
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-light: rgba(37, 99, 235, 0.12);
+
+    /* Light Theme */
+    --bg-body: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-card-subtle: #f1f5f9;
+    --bg-input: #ffffff;
+    
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+    
+    --border-color: #cbd5e1;
+    --border-subtle: #e2e8f0;
+
+    /* Shift Badge Colors - Light */
+    --sh-sabah-bg: #fef9c3;
+    --sh-sabah-text: #854d0e;
+    --sh-sabah-border: #facc15;
+
+    --sh-wasat-bg: #dcfce7;
+    --sh-wasat-text: #14532d;
+    --sh-wasat-border: #86efac;
+
+    --sh-masa-bg: #dbeafe;
+    --sh-masa-text: #1e40af;
+    --sh-masa-border: #93c5fd;
+
+    --sh-sahar-bg: #f3e8ff;
+    --sh-sahar-text: #581c87;
+    --sh-sahar-border: #d8b4fe;
+
+    --sh-off-bg: #f1f5f9;
+    --sh-off-text: #334155;
+    --sh-off-border: #94a3b8;
+
+    --sh-g-bg: #ffe4e6;
+    --sh-g-text: #881337;
+    --sh-g-border: #fecdd3;
+
+    /* Alert States */
+    --success-bg: #ecfdf5;
+    --success-text: #065f46;
+    --success-border: #a7f3d0;
+
+    --danger-bg: #fef2f2;
+    --danger-text: #991b1b;
+    --danger-border: #fecaca;
+
+    --warning-bg: #fffbeb;
+    --warning-text: #92400e;
+    --warning-border: #fde68a;
+
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.07);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+  }
+
+  /* Dark Theme */
+  [data-theme="dark"] {
+    --bg-body: #090e17;
+    --bg-card: #111a2e;
+    --bg-card-subtle: #17233c;
+    --bg-input: #152037;
+    
+    --text-primary: #ffffff;
+    --text-secondary: #e2e8f0;
+    --text-muted: #94a3b8;
+    
+    --border-color: #273754;
+    --border-subtle: #1c2b46;
+
+    /* Shift Badge Colors - Dark Mode */
+    --sh-sabah-bg: #3f2a03;
+    --sh-sabah-text: #fef08a;
+    --sh-sabah-border: #ca8a04;
+
+    --sh-wasat-bg: #052e16;
+    --sh-wasat-text: #86efac;
+    --sh-wasat-border: #16a34a;
+
+    --sh-masa-bg: #11284d;
+    --sh-masa-text: #93c5fd;
+    --sh-masa-border: #2563eb;
+
+    --sh-sahar-bg: #3b0764;
+    --sh-sahar-text: #e9d5ff;
+    --sh-sahar-border: #9333ea;
+
+    --sh-off-bg: #1e293b;
+    --sh-off-text: #f8fafc;
+    --sh-off-border: #475569;
+
+    --sh-g-bg: #4c0519;
+    --sh-g-text: #fecdd3;
+    --sh-g-border: #be123c;
+
+    --success-bg: rgba(16, 185, 129, 0.16);
+    --success-text: #6ee7b7;
+    --success-border: #059669;
+
+    --danger-bg: rgba(239, 68, 68, 0.18);
+    --danger-text: #fca5a5;
+    --danger-border: #dc2626;
+
+    --warning-bg: rgba(245, 158, 11, 0.18);
+    --warning-text: #fde68a;
+    --warning-border: #d97706;
+
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+    --shadow-md: 0 4px 14px rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--bg-body);
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    line-height: 1.55;
+    font-size: 15px;
+    font-weight: 600;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  button, input, select, textarea {
+    font-family: inherit;
+    font-size: 14.5px;
+    color: inherit;
+  }
+  button { cursor: pointer; border: none; outline: none; }
+
+  .layout-container {
+    max-width: 1480px;
+    margin: 0 auto;
+    padding: 20px;
+    display: none;
+  }
+  .layout-container.is-authenticated {
+    display: block;
+  }
+
+  /* Header */
+  .top-header {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 18px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    box-shadow: var(--shadow-sm);
+  }
+  .brand-group {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .brand-logo {
+    width: 48px;
+    height: 48px;
+    background: var(--primary);
+    color: #ffffff;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+  }
+  .brand-text h1 {
+    font-size: 21px;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.25;
+  }
+  .brand-text p {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .theme-toggle-btn {
+    background: var(--bg-card-subtle);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px 14px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s ease;
+  }
+  .theme-toggle-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  .sync-badge {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: var(--bg-card-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .sync-badge:hover {
+    border-color: var(--primary);
+  }
+  .sync-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 6px #10b981;
+  }
+  .sync-dot.offline {
+    background: #f59e0b;
+    box-shadow: 0 0 6px #f59e0b;
+  }
+  .sync-dot.syncing {
+    background: #3b82f6;
+    animation: pulseSync 1s infinite alternate;
+  }
+  @keyframes pulseSync {
+    from { opacity: 0.3; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1.2); }
+  }
+
+  /* Toolbar */
+  .control-strip {
+    margin-top: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .week-selector-group {
+    display: flex;
+    align-items: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 5px 8px;
+    gap: 6px;
+  }
+  .nav-btn {
+    background: var(--bg-card-subtle);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+  }
+  .week-selector-group label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    padding: 0 4px;
+  }
+  .week-selector-group input[type="date"] {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 5px 8px;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    outline: none;
+    direction: ltr;
+  }
+  .btn-today {
+    background: var(--bg-card-subtle);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .btn-today:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .quick-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 13.5px;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+  }
+  .btn-primary {
+    background: var(--primary);
+    color: #ffffff;
+  }
+  .btn-primary:hover {
+    background: var(--primary-hover);
+  }
+  .btn-secondary {
+    background: var(--bg-card);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+  }
+  .btn-secondary:hover {
+    background: var(--bg-card-subtle);
+    border-color: var(--primary);
+  }
+  .btn-danger {
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: var(--danger-border);
+  }
+  .btn-success {
+    background: var(--success-bg);
+    color: var(--success-text);
+    border-color: var(--success-border);
+  }
+  .btn-sm {
+    padding: 4px 10px;
+    font-size: 12.5px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Clean Tabs Nav */
+  .clean-tabs-nav {
+    margin-top: 16px;
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid var(--border-color);
+    overflow-x: auto;
+  }
+  .tab-btn {
+    padding: 10px 20px;
+    background: transparent;
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 15px;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.15s;
+    white-space: nowrap;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  }
+  .tab-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-card-subtle);
+  }
+  .tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    background: var(--bg-card);
+    font-weight: 800;
+  }
+  .tab-pill {
+    font-size: 11.5px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--bg-card-subtle);
+    margin-right: 6px;
+  }
+  .tab-pill.warn {
+    background: var(--danger-bg);
+    color: var(--danger-text);
+  }
+
+  .view-pane {
+    display: none;
+    margin-top: 18px;
+  }
+  .view-pane.active {
+    display: block;
+  }
+
+  /* Dashboard View */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .kpi-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .kpi-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--text-primary);
+    margin-top: 4px;
+    line-height: 1.15;
+  }
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* 6-Day Coverage Grid (Sat to Thu) */
+  .six-day-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .day-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .day-card-head {
+    background: var(--bg-card-subtle);
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .day-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-primary);
+  }
+  .day-date {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-right: 6px;
+  }
+  .day-total-badge {
+    font-size: 12px;
+    font-weight: 800;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+
+  .day-card-body {
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .shift-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card-subtle);
+    border: 1px solid var(--border-subtle);
+  }
+  .shift-line.deficit {
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+  }
+  .shift-info-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .shift-title-text {
+    font-size: 13.5px;
+    font-weight: 700;
+  }
+  .shift-time-text {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .shift-status-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .shift-ratio {
+    font-size: 13.5px;
+    font-weight: 900;
+    direction: ltr;
+  }
+  .badge-coverage {
+    font-size: 11.5px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .badge-coverage.ok {
+    background: var(--success-bg);
+    color: var(--success-text);
+  }
+  .badge-coverage.short {
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border: 1px solid var(--danger-border);
+  }
+
+  .panel-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  .panel-title {
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+  }
+
+  .deficit-quick-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .deficit-quick-item {
+    background: var(--danger-bg);
+    border: 1px solid var(--danger-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .deficit-quick-item strong {
+    color: var(--danger-text);
+    font-size: 14px;
+  }
+  .deficit-quick-item span {
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+
+  /* Shift Chips */
+  .shift-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 6px;
+    border-radius: 6px;
+    font-weight: 900;
+    font-size: 13px;
+    border: 1px solid transparent;
+    user-select: none;
+  }
+  .sh-sabah { background: var(--sh-sabah-bg); color: var(--sh-sabah-text); border-color: var(--sh-sabah-border); }
+  .sh-wasat { background: var(--sh-wasat-bg); color: var(--sh-wasat-text); border-color: var(--sh-wasat-border); }
+  .sh-masa  { background: var(--sh-masa-bg);  color: var(--sh-masa-text);  border-color: var(--sh-masa-border); }
+  .sh-sahar { background: var(--sh-sahar-bg); color: var(--sh-sahar-text); border-color: var(--sh-sahar-border); }
+  .sh-off   { background: var(--sh-off-bg);   color: var(--sh-off-text);   border-color: var(--sh-off-border); }
+  .sh-g     { background: var(--sh-g-bg);     color: var(--sh-g-text);     border-color: var(--sh-g-border); }
+
+  .legend-strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: var(--bg-card-subtle);
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    margin-bottom: 14px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  /* Roster Table (Sat to Thu) */
+  .table-scroll-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+  }
+  .roster-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+    text-align: center;
+  }
+  .roster-table th {
+    background: var(--bg-card-subtle);
+    color: var(--text-primary);
+    font-weight: 800;
+    font-size: 14px;
+    padding: 12px 10px;
+    border-bottom: 2px solid var(--border-color);
+    white-space: nowrap;
+  }
+  .roster-table td {
+    padding: 9px 8px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+  }
+  .roster-table tbody tr:hover td {
+    background: var(--bg-card-subtle);
+  }
+
+  .emp-cell {
+    text-align: right;
+    padding-right: 14px !important;
+    min-width: 190px;
+  }
+  .emp-title {
+    font-weight: 800;
+    font-size: 14.5px;
+    color: var(--text-primary);
+  }
+  .emp-code {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .shift-dropdown {
+    width: 78px;
+    padding: 5px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    font-weight: 800;
+    text-align: center;
+    font-size: 13.5px;
+    cursor: pointer;
+    outline: none;
+    background: var(--bg-card);
+    color: var(--text-primary);
+  }
+  .shift-dropdown:focus {
+    border-color: var(--primary);
+  }
+
+  /* Form Simple */
+  .form-row-simple {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr auto;
+    gap: 12px;
+    align-items: flex-end;
+  }
+  .field-box {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .field-box label {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-secondary);
+  }
+  .field-box input, .field-box select {
+    padding: 9px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-weight: 600;
+    outline: none;
+  }
+  .field-box input:focus, .field-box select:focus {
+    border-color: var(--primary);
+  }
+
+  .req-badge {
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .req-badge.pending { background: var(--warning-bg); color: var(--warning-text); border: 1px solid var(--warning-border); }
+  .req-badge.approved { background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border); }
+  .req-badge.rejected { background: var(--danger-bg); color: var(--danger-text); border: 1px solid var(--danger-border); }
+
+  /* Cloud Banner & Settings */
+  .cloud-status-card {
+    background: var(--bg-card-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .cloud-status-title {
+    font-size: 15px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cloud-config-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  /* Modals & Toasts */
+  .toast-box {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .toast-item {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 10px 18px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: auto;
+    animation: toastIn 0.2s ease;
+  }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(2px);
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open {
+    display: flex;
+  }
+  .modal-dialog {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    width: 100%;
+    max-width: 480px;
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+  }
+  .modal-header-title {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 12px;
+  }
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  @media (max-width: 1080px) {
+    .six-day-grid { grid-template-columns: repeat(2, 1fr); }
+    .kpi-row { grid-template-columns: 1fr; }
+    .form-row-simple { grid-template-columns: 1fr 1fr; }
+    .cloud-config-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .six-day-grid { grid-template-columns: 1fr; }
+    .deficit-quick-list { grid-template-columns: 1fr; }
+    .form-row-simple { grid-template-columns: 1fr; }
+    .top-header { flex-direction: column; align-items: flex-start; }
+    .control-strip { flex-direction: column; align-items: stretch; }
+  }
+
+  body {
+    background-image: radial-gradient(ellipse at 15% 0%, rgba(37,99,235,.12), transparent 42%);
+  }
+  [hidden] { display: none !important; }
+  .layout-container { max-width: 1440px; padding: 24px clamp(14px, 3vw, 34px) 40px; }
+  .top-header {
+    border-radius: 18px;
+    padding: 20px 24px;
+    box-shadow: 0 12px 34px rgba(15,23,42,.08);
+  }
+  [data-theme="dark"] .top-header { box-shadow: 0 12px 34px rgba(0,0,0,.22); }
+  .brand-logo { width: 54px; height: 54px; border-radius: 16px; }
+  .brand-text h1 { font-size: clamp(19px, 2.5vw, 25px); }
+  .control-strip {
+    margin: 16px 0 0;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+  }
+  .clean-tabs-nav {
+    gap: 6px;
+    margin-top: 18px;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 5px;
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+  }
+  .tab-btn { border: 0; border-radius: 10px; margin: 0; padding: 10px 16px; }
+  .tab-btn.active { background: var(--primary-light); }
+  .view-pane { margin-top: 20px; }
+  .panel-card, .kpi-box, .day-card {
+    border-radius: 14px;
+    box-shadow: var(--shadow-sm);
+  }
+  .panel-card { padding: 20px; margin-bottom: 16px; }
+  .kpi-box { padding: 19px 20px; }
+  .kpi-value { font-variant-numeric: tabular-nums; }
+  .day-card-head { padding: 13px 16px; }
+  .day-card-body { padding: 4px 14px; }
+  .btn { min-height: 38px; }
+  .btn:focus-visible, .tab-btn:focus-visible, input:focus-visible,
+  select:focus-visible, .nav-btn:focus-visible, .theme-toggle-btn:focus-visible {
+    outline: 3px solid rgba(37,99,235,.45);
+    outline-offset: 2px;
+  }
+  .shift-dropdown, input, select { min-height: 40px; }
+  .sync-badge { min-height: 38px; }
+  .auth-screen {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+  .auth-card {
+    width: min(100%, 440px);
+    padding: clamp(24px, 5vw, 38px);
+    border: 1px solid var(--border-color);
+    border-radius: 22px;
+    background: var(--bg-card);
+    box-shadow: 0 24px 70px rgba(15,23,42,.14);
+  }
+  [data-theme="dark"] .auth-card { box-shadow: 0 24px 70px rgba(0,0,0,.36); }
+  .auth-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+  .auth-brand .brand-logo { flex: 0 0 54px; }
+  .auth-card h1 { font-size: 24px; line-height: 1.4; }
+  .auth-card > p { color: var(--text-muted); margin: 7px 0 22px; }
+  .auth-form { display: grid; gap: 14px; }
+  .auth-form label { display: grid; gap: 6px; font-size: 13px; font-weight: 800; }
+  .auth-form input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 9px;
+    background: var(--bg-input);
+  }
+  .auth-form .btn { width: 100%; min-height: 44px; margin-top: 4px; }
+  .auth-message { min-height: 24px; color: var(--danger-text); font-size: 13px; }
+  .auth-footnote { color: var(--text-muted); font-size: 12px; margin-top: 18px; }
+  .account-actions { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 12px; }
+  #currentUserLabel { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .settings-section-title { margin: 22px 0 10px; }
+
+  @media print {
+    body { background: #fff !important; color: #000 !important; }
+    .top-header { border: 1px solid #000; box-shadow: none; }
+    .control-strip, .clean-tabs-nav, .no-print, .btn, .theme-toggle-btn { display: none !important; }
+    .layout-container { display: block !important; }
+    .view-pane { display: block !important; }
+    #view-requests, #view-settings { display: none !important; }
+    .roster-table { min-width: 100% !important; font-size: 11px !important; }
+    .roster-table th, .roster-table td { padding: 4px !important; }
+    .six-day-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="brand-logo" aria-hidden="true">UP</div>
+      <div>
+        <h1 id="authTitle">إدارة الورديات والإجازات</h1>
+        <p style="margin:2px 0 0;color:var(--text-muted);font-size:13px;">صيدليات المتحدة</p>
+      </div>
+    </div>
+    <p>سجّل الدخول بحساب العمل المصرّح به للوصول إلى بيانات الفرع.</p>
+    <form class="auth-form" id="loginForm">
+      <label for="loginEmail">البريد الإلكتروني
+        <input type="email" id="loginEmail" autocomplete="username" required placeholder="name@company.com">
+      </label>
+      <label for="loginPassword">كلمة المرور
+        <input type="password" id="loginPassword" autocomplete="current-password" required>
+      </label>
+      <div class="auth-message" id="loginMessage" role="alert" aria-live="polite"></div>
+      <button type="submit" class="btn btn-primary" id="loginButton">تسجيل الدخول</button>
+      <button type="button" class="btn btn-secondary" id="resetPasswordButton">نسيت كلمة المرور؟</button>
+    </form>
+    <div class="auth-footnote">الحسابات ينشئها مسؤول النظام من Firebase Authentication. لا يوجد تسجيل عام.</div>
+  </div>
+</section>
+
+<div class="layout-container">
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="top-header">
+    <div class="brand-group">
+      <div class="brand-logo">UP</div>
+      <div class="brand-text">
+        <h1>إدارة الورديات والإجازات</h1>
+        <p>United Pharmacy · صيدليات المتحدة (السبت إلى الخميس · مزامنة سحابية)</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- Sync Status Badge -->
+      <div class="sync-badge" id="syncBadgeIndicator" title="اضغط لفتح إعدادات الربط السحابي">
+        <span class="sync-dot" id="syncStatusDot"></span>
+        <span id="syncStatusLabel">جاري التحقق...</span>
+      </div>
+      
+      <button type="button" class="theme-toggle-btn" id="themeToggleBtn" title="تبديل الوضع الليلي / الفاتح">
+        <span id="themeToggleLabel">☀️ الوضع الفاتح</span>
+      </button>
+      <div class="account-actions">
+        <span id="currentUserLabel"></span>
+        <button type="button" class="btn btn-secondary btn-sm" id="signOutButton">تسجيل الخروج</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== TOOLBAR & 6-DAY WEEK SELECTOR ==================== -->
+  <div class="control-strip no-print">
+    <div class="week-selector-group">
+      <button type="button" class="nav-btn" id="btnPrevWeek" title="الأسبوع السابق">‹</button>
+      <label for="weekStartDate">أسبوع العمل من السبت:</label>
+      <input type="date" id="weekStartDate">
+      <button type="button" class="nav-btn" id="btnNextWeek" title="الأسبوع التالي">›</button>
+      <button type="button" class="btn-today" id="btnCurrentWeek">الأسبوع الحالي</button>
+    </div>
+
+    <div class="quick-buttons">
+      <button type="button" class="btn btn-secondary" id="btnExportJson">نسخة احتياطية</button>
+      <button type="button" class="btn btn-secondary" id="btnExportCsv">تصدير Excel</button>
+      <button type="button" class="btn btn-secondary" id="btnPrint">طباعة الجدول</button>
+      <button type="button" class="btn btn-primary" id="btnQuickLeave">+ طلب إجازة</button>
+    </div>
+  </div>
+
+  <!-- ==================== CLEAN TABS NAVIGATION ==================== -->
+  <nav class="clean-tabs-nav no-print">
+    <button type="button" class="tab-btn active" data-tab="dashboard">
+      نظرة عامة وتغطية الورديات
+      <span class="tab-pill warn" id="tabDeficitPill" style="display:none">0</span>
+    </button>
+    
+    <button type="button" class="tab-btn" data-tab="roster">
+      جدول الموظفين والورديات
+      <span class="tab-pill" id="tabStaffCountPill">0</span>
+    </button>
+
+    <button type="button" class="tab-btn" data-tab="requests">
+      طلبات الإجازات
+      <span class="tab-pill" id="tabRequestsCountPill">0</span>
+    </button>
+
+    <button type="button" class="tab-btn" data-tab="settings">
+      قاعدة البيانات والإعدادات
+    </button>
+  </nav>
+
+  <!-- ====================================================
+       PAGE 1: DASHBOARD & COVERAGE (6 DAYS: SAT - THU)
+       ==================================================== -->
+  <section class="view-pane active" id="view-dashboard">
+    <div style="margin-bottom:14px;font-size:14px;color:var(--text-muted);font-weight:700;" id="weekRangeDesc">
+      جاري التحميل...
+    </div>
+
+    <!-- 3 KPIs -->
+    <div class="kpi-row">
+      <div class="kpi-box">
+        <div class="kpi-label">الموظفون المسجلون</div>
+        <div class="kpi-value" id="kpiStaffTotal">0</div>
+        <div class="kpi-sub">إجمالي فريق الفرع</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-label">ورديات بها عجز هذا الأسبوع</div>
+        <div class="kpi-value" id="kpiDeficitsTotal" style="color:var(--danger-text)">0</div>
+        <div class="kpi-sub">تحت الحد الأدنى المطلوب</div>
+      </div>
+
+      <div class="kpi-box">
+        <div class="kpi-label">طلبات إجازة بانتظار القرار</div>
+        <div class="kpi-value" id="kpiPendingTotal" style="color:var(--warning-text)">0</div>
+        <div class="kpi-sub">طلبات معلقة</div>
+      </div>
+    </div>
+
+    <!-- Shift Legend -->
+    <div class="legend-strip" id="dashboardLegend"></div>
+
+    <!-- 6-Day Coverage Cards -->
+    <div class="panel-card" style="padding:16px;">
+      <div class="panel-title" style="margin-bottom:14px;">تغطية الورديات اليومية · السبت إلى الخميس</div>
+      <div class="six-day-grid" id="sixDayGrid">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Deficit alert -->
+    <div class="panel-card" id="deficitsAlertPanel" style="display:none;">
+      <div class="panel-title" style="color:var(--danger-text)">⚠️ تنبيه: الورديات التي تحتاج إلى تغطية</div>
+      <div class="deficit-quick-list" id="deficitsListContainer">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================
+       PAGE 2: ROSTER TABLE (SATURDAY - THURSDAY)
+       ==================================================== -->
+  <section class="view-pane" id="view-roster">
+    <div class="panel-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <div class="panel-title" style="margin-bottom:0;">جدول الموظفين الأسبوعي · 6 أيام عمل</div>
+        <button type="button" class="btn btn-primary btn-sm" id="btnOpenAddStaff">إضافة موظف</button>
+      </div>
+
+      <div class="legend-strip" id="rosterLegend"></div>
+
+      <!-- Search -->
+      <div style="margin-bottom:14px;max-width:320px;">
+        <input type="text" id="rosterSearch" placeholder="بحث باسم الموظف أو الكود..." 
+               style="width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:var(--bg-input);color:var(--text-primary);font-weight:700;">
+      </div>
+
+      <div class="table-scroll-wrap">
+        <table class="roster-table">
+          <thead id="rosterTableHead">
+            <!-- Rendered by JS -->
+          </thead>
+          <tbody id="rosterTableBody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================
+       PAGE 3: LEAVE REQUESTS (DIRECT & NO SIMULATOR)
+       ==================================================== -->
+  <section class="view-pane" id="view-requests">
+    <div class="panel-card">
+      <div class="panel-title">تسجيل إجازة جديدة</div>
+      
+      <form id="directLeaveForm" class="form-row-simple">
+        <div class="field-box">
+          <label for="reqStaffSelect">الصيدلي / الموظف *</label>
+          <select id="reqStaffSelect" required>
+            <option value="">اختر الموظف...</option>
+          </select>
+        </div>
+
+        <div class="field-box">
+          <label for="reqDateField">تاريخ الإجازة · السبت إلى الخميس *</label>
+          <input type="date" id="reqDateField" required>
+        </div>
+
+        <div class="field-box">
+          <label for="reqNoteField">ملاحظة أو سبب الإجازة (اختياري)</label>
+          <input type="text" id="reqNoteField" placeholder="مثال: ظرف عائلي، سنوية...">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="height:42px;">
+          حفظ الطلب
+        </button>
+      </form>
+    </div>
+
+    <!-- Requests Table -->
+    <div class="panel-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <div class="panel-title" style="margin-bottom:0;">سجل الإجازات</div>
+        <select id="reqFilterSelect" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-input);color:var(--text-primary);font-weight:700;">
+          <option value="ALL">جميع الطلبات</option>
+          <option value="pending">بانتظار القرار (معلقة)</option>
+          <option value="approved">معتمدة</option>
+          <option value="rejected">مرفوضة</option>
+        </select>
+      </div>
+
+      <div class="table-scroll-wrap">
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th style="text-align:right;padding-right:14px;">الموظف</th>
+              <th>التاريخ</th>
+              <th>اليوم</th>
+              <th>وردية الدوام</th>
+              <th>الملاحظات</th>
+              <th>الحالة</th>
+              <th class="no-print">القرار والإجراء</th>
+            </tr>
+          </thead>
+          <tbody id="requestsTableBody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+      <div id="requestsEmptyMsg" style="display:none;padding:24px;text-align:center;color:var(--text-muted);font-weight:700;">
+        لا توجد أي طلبات إجازة مسجلة تطابق التصفية.
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================
+       PAGE 4: SETTINGS & FIREBASE CLOUD DATABASE HUB
+       ==================================================== -->
+  <section class="view-pane" id="view-settings">
+    
+    <!-- Cloud Database Status & Configuration -->
+    <div class="panel-card">
+      <div class="panel-title">الاتصال بقاعدة البيانات</div>
+      
+      <div class="cloud-status-card" id="cloudStatusContainer">
+        <div>
+          <div class="cloud-status-title">
+            <span class="sync-dot" id="cloudBannerDot"></span>
+            <span id="cloudBannerTitle">جاري الاتصال...</span>
+          </div>
+          <p id="cloudBannerDesc" style="font-size:13px;color:var(--text-muted);margin-top:4px;">
+            يتم التحقق من الاتصال بقاعدة بيانات الفرع.
+          </p>
+        </div>
+
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btnSyncToCloud">
+            مزامنة الآن
+          </button>
+        </div>
+      </div>
+
+      <!-- Config Inputs -->
+      <form id="firebaseSettingsForm" style="margin-top:16px;">
+        <div style="font-size:13.5px;font-weight:800;color:var(--text-primary);margin-bottom:8px;">
+          إعدادات مشروع Firebase:
+        </div>
+        <div class="cloud-config-grid">
+          <div class="field-box">
+            <label for="fbApiKey">مفتاح API</label>
+            <input type="text" id="fbApiKey" placeholder="AIzaSy...">
+          </div>
+          <div class="field-box">
+            <label for="fbProjectId">معرّف المشروع</label>
+            <input type="text" id="fbProjectId" placeholder="united-pharmacy-planner">
+          </div>
+          <div class="field-box">
+            <label for="fbAppId">معرّف التطبيق</label>
+            <input type="text" id="fbAppId" placeholder="1:123456789012:web:abcdef...">
+          </div>
+          <div class="field-box">
+            <label for="fbBranchId">معرّف الفرع</label>
+            <input type="text" id="fbBranchId" placeholder="united_pharmacy_main_branch">
+          </div>
+        </div>
+
+        <div style="margin-top:14px;display:flex;gap:10px;justify-content:flex-end;">
+          <button type="submit" class="btn btn-primary">حفظ الإعدادات وإعادة الاتصال</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Shift Minimum Thresholds -->
+    <div class="panel-card">
+      <div class="panel-title">الحد الأدنى للتغطية اليومية لكل وردية</div>
+      <form id="minConfigForm" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;">
+        <div id="minInputsContainer" style="display:contents;"></div>
+        <div style="grid-column:1/-1;margin-top:10px;display:flex;justify-content:flex-end;">
+          <button type="submit" class="btn btn-primary">حفظ الحدود الدنيا</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="panel-card">
+      <div class="panel-title">حسابات الفريق والصلاحيات</div>
+      <p style="color:var(--text-muted);font-size:13px;line-height:1.8;">
+        الدخول محصور بالحسابات التي ينشئها مسؤول النظام من Firebase Authentication. لا يوجد إنشاء حساب ذاتي؛
+        أضف حسابات أعضاء الفريق من لوحة Firebase ثم شارك بيانات الدخول معهم.
+      </p>
+    </div>
+
+    <!-- Local Backup Tools -->
+    <div class="panel-card">
+      <div class="panel-title">النسخ الاحتياطي المحلي</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-secondary" id="btnDownloadJson2">تنزيل نسخة احتياطية (JSON)</button>
+        
+        <label for="fileImportInput" class="btn btn-secondary" style="cursor:pointer">استيراد نسخة احتياطية</label>
+        <input type="file" id="fileImportInput" accept="application/json,.json" style="display:none">
+
+        <button type="button" class="btn btn-danger" id="btnResetAll">استعادة الجدول الأصلي (ضبط المصنع)</button>
+      </div>
+    </div>
+
+  </section>
+
+</div>
+
+<!-- ==================== TOASTS ==================== -->
+<div class="toast-box" id="toastContainer" aria-live="polite"></div>
+
+<!-- ==================== MODALS ==================== -->
+<!-- Add Employee Modal -->
+<div class="modal-overlay" id="addStaffModal">
+  <div class="modal-dialog">
+    <div class="modal-header-title">إضافة موظف جديد للجدول</div>
+    <form id="addStaffForm" style="display:flex;flex-direction:column;gap:12px;">
+      <div class="field-box">
+        <label for="newStaffName">اسم الموظف *</label>
+        <input type="text" id="newStaffName" required placeholder="مثال: Ahmed Hassan">
+      </div>
+      <div class="field-box">
+        <label for="newStaffCode">الرقم الوظيفي / الكود</label>
+        <input type="text" id="newStaffCode" placeholder="مثال: 7060">
+      </div>
+      <div class="field-box">
+        <label for="newStaffShift">الوردية الافتراضية طوال الأسبوع (6 أيام)</label>
+        <select id="newStaffShift">
+          <option value="R">R - راحة</option>
+          <option value="ص">ص - صباحي (9 ص - 5 م)</option>
+          <option value="و">و - وسط (1 م - 9 م)</option>
+          <option value="م">م - مسائي (4 م - 12 ص)</option>
+          <option value="س">س - سهر (6 م - 2 ص)</option>
+          <option value="ج">ج - غير مجدول</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btnCloseStaffModal">إلغاء</button>
+        <button type="submit" class="btn btn-primary">إضافة</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-dialog">
+    <div class="modal-header-title" id="confirmTitle">تأكيد الإجراء</div>
+    <p id="confirmMessage" style="font-size:14px;color:var(--text-muted);margin-bottom:16px;">هل أنت متأكد؟</p>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" id="btnConfirmCancel">إلغاء</button>
+      <button type="button" class="btn btn-danger" id="btnConfirmOk">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====================================================
+     JAVASCRIPT LOGIC & FIREBASE REALTIME SYNC
+     ==================================================== -->
+<script>
+(function() {
+  'use strict';
+
+  /* ----------------------------------------------------
+     6 DAYS CONFIGURATION: SATURDAY TO THURSDAY
+     ---------------------------------------------------- */
+  const DAYS_AR = ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
+  const DAYS_EN = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu'];
+
+  const SHIFTS = [
+    { key: 'ص', name: 'صباحي', time: '9 ص – 5 م', defaultMin: 4, cls: 'sh-sabah' },
+    { key: 'و', name: 'وسط',   time: '1 م – 9 م', defaultMin: 3, cls: 'sh-wasat' },
+    { key: 'م', name: 'مسائي',  time: '4 م – 12 ص', defaultMin: 4, cls: 'sh-masa' },
+    { key: 'س', name: 'سهر',   time: '6 م – 2 ص', defaultMin: 3, cls: 'sh-sahar' }
+  ];
+
+  const SYMBOLS = [
+    ...SHIFTS.map(s => ({ key: s.key, label: `${s.key} - ${s.name}`, cls: s.cls })),
+    { key: 'R', label: 'R - راحة', cls: 'sh-off' },
+    { key: 'ج', label: 'ج - غير مجدول', cls: 'sh-g' }
+  ];
+
+  const STORAGE_KEY = 'up_leave_planner_v4_clean';
+  const FB_SETTINGS_KEY = 'up_firebase_settings_v1';
+
+  function createInitialState() {
+    return {
+      employees: [],
+      requests: [],
+      minimums: { 'ص': 4, 'و': 3, 'م': 4, 'س': 3 },
+      theme: 'dark'
+    };
+  }
+
+  /* ----------------------------------------------------
+     DATE UTILITIES
+     ---------------------------------------------------- */
+  function toISO(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function fromISO(isoStr) {
+    if (!isoStr) return new Date();
+    const parts = isoStr.split('-').map(Number);
+    if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) return new Date();
+    return new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+  }
+
+  function getSaturdayOf(isoStr) {
+    const d = fromISO(isoStr);
+    const dayOfWeek = d.getDay();
+    const diff = (dayOfWeek + 1) % 7;
+    d.setDate(d.getDate() - diff);
+    return toISO(d);
+  }
+
+  function addDays(isoStr, n) {
+    const d = fromISO(isoStr);
+    d.setDate(d.getDate() + n);
+    return toISO(d);
+  }
+
+  function formatArabicDate(isoStr) {
+    const d = fromISO(isoStr);
+    return d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' });
+  }
+
+  function getDayIndex(isoStr) {
+    const d = fromISO(isoStr);
+    const day = d.getDay();
+    return (day + 1) % 7;
+  }
+
+  function isFriday(isoStr) {
+    return fromISO(isoStr).getDay() === 5;
+  }
+
+  function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function uid(prefix = 'id') {
+    return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 5);
+  }
+
+  /* ----------------------------------------------------
+     STATE INITIALIZATION
+     ---------------------------------------------------- */
+  let state;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    state = saved ? JSON.parse(saved) : createInitialState();
+  } catch (e) {
+    console.error('تعذر تحميل البيانات المحلية:', e);
+    state = createInitialState();
+  }
+
+  state.employees = (state.employees || []).map(e => ({
+    ...e,
+    schedule: Array.from({ length: 6 }, (_, i) => (e.schedule && e.schedule[i]) || 'R')
+  }));
+
+  let currentWeekSaturday = getSaturdayOf(toISO(new Date()));
+
+  const $ = id => document.getElementById(id);
+  const getShift = k => SHIFTS.find(s => s.key === k);
+
+  /* ----------------------------------------------------
+     FIREBASE BACKEND & REALTIME FIRESTORE ENGINE
+     ---------------------------------------------------- */
+  let firestoreDb = null;
+  let firebaseAuth = null;
+  let isCloudActive = false;
+  let isSyncingToCloud = false;
+  let firestoreUnsubscribe = null;
+  let authUser = null;
+
+  function setLoginMessage(message) {
+    $('loginMessage').textContent = message || '';
+  }
+
+  function setAuthenticatedView(user) {
+    authUser = user;
+    $('authScreen').hidden = Boolean(user);
+    document.querySelector('.layout-container').classList.toggle('is-authenticated', Boolean(user));
+    $('currentUserLabel').textContent = user ? user.email || '' : '';
+    if (!user) {
+      isCloudActive = false;
+      if (firestoreUnsubscribe) {
+        firestoreUnsubscribe();
+        firestoreUnsubscribe = null;
+      }
+    }
+  }
+
+  function getActiveFirebaseConfig() {
+    let cfg = window.FIREBASE_CONFIG || {};
+    try {
+      const stored = localStorage.getItem(FB_SETTINGS_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        cfg = { ...cfg, ...parsed };
+      }
+    } catch (e) {
+      console.error('تعذر قراءة إعدادات Firebase المحفوظة:', e);
+      setLoginMessage('تعذر قراءة إعدادات الاتصال. أعد تحميل الصفحة أو راجع إعدادات Firebase.');
+    }
+    return cfg;
+  }
+
+  function getBranchDocId() {
+    const cfg = getActiveFirebaseConfig();
+    return cfg.branchId || window.FIREBASE_BRANCH_ID || 'united_pharmacy_main_branch';
+  }
+
+  function updateCloudStatusUI(status, label, desc) {
+    const dot = $('syncStatusDot');
+    const lbl = $('syncStatusLabel');
+    const bDot = $('cloudBannerDot');
+    const bTitle = $('cloudBannerTitle');
+    const bDesc = $('cloudBannerDesc');
+
+    if (status === 'connected') {
+      dot.className = 'sync-dot';
+      bDot.className = 'sync-dot';
+      lbl.textContent = 'سحابي مباشر (Firebase)';
+      bTitle.textContent = 'متصل سحابياً بقاعدة بيانات Firebase (مزامنة فورية)';
+      bDesc.textContent = `البيانات متصلة مباشرة بالفرع: [${getBranchDocId()}]. أي تعديل يظهر فوراً لدى الجميع.`;
+    } else if (status === 'syncing') {
+      dot.className = 'sync-dot syncing';
+      bDot.className = 'sync-dot syncing';
+      lbl.textContent = 'جاري المزامنة السحابية...';
+      bTitle.textContent = 'جاري مزامنة البيانات مع السحابة...';
+      bDesc.textContent = 'يتم رفع آخر التعديلات الآن.';
+    } else {
+      dot.className = 'sync-dot offline';
+      bDot.className = 'sync-dot offline';
+      lbl.textContent = 'غير متصل';
+      bTitle.textContent = 'تعذر الاتصال بقاعدة البيانات';
+      bDesc.textContent = desc || 'تحقق من الاتصال بالإنترنت وإعدادات Firebase.';
+    }
+  }
+
+  async function initFirebaseBackend() {
+    const cfg = getActiveFirebaseConfig();
+    if ($('fbApiKey')) $('fbApiKey').value = cfg.apiKey && !cfg.apiKey.includes('YOUR') ? cfg.apiKey : '';
+    if ($('fbProjectId')) $('fbProjectId').value = cfg.projectId && !cfg.projectId.includes('YOUR') ? cfg.projectId : '';
+    if ($('fbAppId')) $('fbAppId').value = cfg.appId && !cfg.appId.includes('YOUR') ? cfg.appId : '';
+    if ($('fbBranchId')) $('fbBranchId').value = getBranchDocId();
+
+    if (!cfg.apiKey || cfg.apiKey.includes('YOUR') || !cfg.projectId || cfg.projectId.includes('YOUR')) {
+      isCloudActive = false;
+      updateCloudStatusUI('offline', '', 'إعدادات Firebase غير مكتملة. أدخل بيانات المشروع من قسم الإعدادات.');
+      setLoginMessage('الاتصال بقاعدة البيانات غير مهيأ. تواصل مع مسؤول النظام.');
+      return;
+    }
+
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(cfg);
+      } else if (firebase.app().options.projectId !== cfg.projectId) {
+        throw new Error('تم تغيير مشروع Firebase. أعد تحميل الصفحة لتطبيق الإعدادات الجديدة.');
+      }
+      firestoreDb = firebase.firestore();
+      firebaseAuth = firebase.auth();
+      try {
+        await firestoreDb.enablePersistence({ synchronizeTabs: true });
+      } catch (err) {
+        if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') {
+          console.warn('تعذر تفعيل التخزين دون اتصال:', err);
+        }
+      }
+      firebaseAuth.onAuthStateChanged(user => {
+        setLoginMessage('');
+        setAuthenticatedView(user);
+        if (user) startRealtimeListener();
+      }, err => {
+        console.error('تعذر التحقق من جلسة تسجيل الدخول:', err);
+        setLoginMessage('تعذر التحقق من تسجيل الدخول. تحقق من اتصالك ثم أعد المحاولة.');
+      });
+    } catch (err) {
+      console.error('Firebase initialization failed:', err);
+      isCloudActive = false;
+      updateCloudStatusUI('offline', '', 'تعذر تهيئة Firebase: ' + err.message);
+      setLoginMessage('تعذر تهيئة Firebase. راجع إعدادات الاتصال.');
+    }
+  }
+
+  function startRealtimeListener() {
+    if (!firestoreDb || !authUser) return;
+    if (firestoreUnsubscribe) firestoreUnsubscribe();
+
+    const branchDoc = getBranchDocId();
+    updateCloudStatusUI('syncing');
+
+    firestoreUnsubscribe = firestoreDb.collection('branches').doc(branchDoc).onSnapshot(doc => {
+      if (doc.exists) {
+        const remote = doc.data();
+        if (!remote || !remote.state || !Array.isArray(remote.state.employees) ||
+            !Array.isArray(remote.state.requests) || !remote.state.minimums) {
+          isCloudActive = false;
+          console.error('Firestore document contains invalid application data.');
+          updateCloudStatusUI('offline', '', 'بيانات الفرع في قاعدة البيانات غير مكتملة؛ لم يتم تحميلها.');
+          return;
+        }
+        isCloudActive = true;
+        if (!isSyncingToCloud) {
+          state = remote.state;
+          state.employees = (state.employees || []).map(e => ({
+            ...e,
+            schedule: Array.from({ length: 6 }, (_, i) => (e.schedule && e.schedule[i]) || 'R')
+          }));
+          saveLocalOnly();
+          renderAll();
+        }
+      } else {
+        isCloudActive = true;
+        pushToCloud();
+      }
+      updateCloudStatusUI('connected');
+    }, err => {
+      console.warn('Firestore snapshot error:', err);
+      isCloudActive = false;
+      updateCloudStatusUI('offline', '', 'تعذر تحميل بيانات الفرع. تحقق من صلاحيات الحساب وقواعد Firestore.');
+    });
+  }
+
+  async function pushToCloud() {
+    if (!firestoreDb || !isCloudActive || !authUser) return false;
+    try {
+      isSyncingToCloud = true;
+      updateCloudStatusUI('syncing');
+      const branchDoc = getBranchDocId();
+
+      await firestoreDb.collection('branches').doc(branchDoc).set({
+        state,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: authUser.uid,
+        branchId: branchDoc
+      });
+
+      updateCloudStatusUI('connected');
+      return true;
+    } catch (err) {
+      console.error('Push to cloud error:', err);
+      showToast('تعذر حفظ التغييرات في قاعدة البيانات. تحقق من الاتصال والصلاحيات.');
+      updateCloudStatusUI('offline', '', 'تعذر حفظ التغييرات في Firestore.');
+      return false;
+    } finally {
+      setTimeout(() => { isSyncingToCloud = false; }, 500);
+    }
+  }
+
+  function saveLocalOnly() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.error('تعذر حفظ البيانات محلياً:', e);
+      showToast('تعذر حفظ نسخة محلية من البيانات على هذا الجهاز.');
+    }
+  }
+
+  function save() {
+    saveLocalOnly();
+    if (isCloudActive) {
+      pushToCloud();
+    }
+  }
+
+  function showToast(msg) {
+    const container = $('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'toast-item';
+    toast.innerHTML = `<span>ℹ️</span><span>${escapeHtml(msg)}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = '0.2s';
+      setTimeout(() => toast.remove(), 250);
+    }, 2800);
+  }
+
+  /* ----------------------------------------------------
+     THEME MANAGEMENT
+     ---------------------------------------------------- */
+  function applyTheme(theme) {
+    state.theme = theme;
+    document.documentElement.setAttribute('data-theme', theme);
+    $('themeToggleLabel').textContent = theme === 'dark' ? '☀️ الوضع الفاتح' : '🌙 الوضع الليلي';
+  }
+
+  applyTheme(state.theme || 'dark');
+
+  $('themeToggleBtn').addEventListener('click', () => {
+    const nextTheme = state.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(nextTheme);
+    save();
+  });
+
+  /* ----------------------------------------------------
+     CONFIRM MODAL
+     ---------------------------------------------------- */
+  let confirmCallback = null;
+  function showConfirm(title, message, callback) {
+    $('confirmTitle').textContent = title;
+    $('confirmMessage').textContent = message;
+    confirmCallback = callback;
+    $('confirmModal').classList.add('open');
+  }
+
+  $('btnConfirmCancel').addEventListener('click', () => {
+    $('confirmModal').classList.remove('open');
+    confirmCallback = null;
+  });
+
+  $('btnConfirmOk').addEventListener('click', () => {
+    $('confirmModal').classList.remove('open');
+    if (confirmCallback) confirmCallback();
+    confirmCallback = null;
+  });
+
+  /* ----------------------------------------------------
+     CALCULATIONS (6 DAYS: SAT - THU)
+     ---------------------------------------------------- */
+  function employeeShiftOn(empId, dateIso) {
+    const emp = state.employees.find(e => e.id === empId);
+    if (!emp) return 'R';
+    const dayIdx = getDayIndex(dateIso);
+    if (dayIdx > 5) return 'R';
+    return emp.schedule[dayIdx] || 'R';
+  }
+
+  function isApprovedLeave(empId, dateIso) {
+    return state.requests.some(r => r.employeeId === empId && r.date === dateIso && r.status === 'approved');
+  }
+
+  function getDailyShiftCounts(dateIso) {
+    const counts = { 'ص': 0, 'و': 0, 'م': 0, 'س': 0 };
+    const dayIdx = getDayIndex(dateIso);
+    if (dayIdx > 5) return counts;
+
+    for (const emp of state.employees) {
+      const sh = emp.schedule[dayIdx];
+      if (counts[sh] !== undefined) {
+        if (!isApprovedLeave(emp.id, dateIso)) {
+          counts[sh]++;
+        }
+      }
+    }
+    return counts;
+  }
+
+  function shiftBadgeHtml(k) {
+    const found = SYMBOLS.find(s => s.key === k) || SYMBOLS[4];
+    return `<span class="shift-chip ${found.cls}">${escapeHtml(k)}</span>`;
+  }
+
+  /* ----------------------------------------------------
+     RENDER: LEGENDS
+     ---------------------------------------------------- */
+  function renderLegends() {
+    const html = SYMBOLS.map(s => `
+      <div class="legend-item">
+        ${shiftBadgeHtml(s.key)}
+        <span>${escapeHtml(s.label.split('-')[1]?.trim() || s.key)}</span>
+      </div>
+    `).join('');
+    $('dashboardLegend').innerHTML = html;
+    $('rosterLegend').innerHTML = html;
+  }
+
+  /* ----------------------------------------------------
+     RENDER: 1. DASHBOARD & 6-DAY COVERAGE (SAT - THU)
+     ---------------------------------------------------- */
+  function renderDashboard() {
+    const weekDates = Array.from({ length: 6 }, (_, i) => addDays(currentWeekSaturday, i));
+    const startStr = formatArabicDate(currentWeekSaturday);
+    const endStr = formatArabicDate(weekDates[5]);
+    
+    $('weekRangeDesc').textContent = `أسبوع العمل من ${startStr} إلى ${endStr} · (السبت إلى الخميس - 6 أيام)`;
+
+    let totalDeficits = 0;
+    const deficitsList = [];
+
+    const dayCardsHtml = weekDates.map((date, idx) => {
+      const counts = getDailyShiftCounts(date);
+      let dayTotal = 0;
+      let dayNeed = 0;
+
+      const shiftLines = SHIFTS.map(s => {
+        const actual = counts[s.key];
+        const need = Number(state.minimums[s.key] ?? s.defaultMin);
+        const gap = Math.max(0, need - actual);
+
+        dayTotal += actual;
+        dayNeed += need;
+
+        if (gap > 0) {
+          totalDeficits++;
+          deficitsList.push({
+            date,
+            dayName: DAYS_AR[idx],
+            shiftName: s.name,
+            gap,
+            actual,
+            need
+          });
+        }
+
+        return `
+          <div class="shift-line ${gap > 0 ? 'deficit' : ''}">
+            <div class="shift-info-left">
+              ${shiftBadgeHtml(s.key)}
+              <div>
+                <div class="shift-title-text">${s.name}</div>
+                <div class="shift-time-text">${s.time}</div>
+              </div>
+            </div>
+            <div class="shift-status-right">
+              <span class="shift-ratio">${actual}/${need}</span>
+              <span class="badge-coverage ${gap > 0 ? 'short' : 'ok'}">
+                ${gap > 0 ? `عجز ${gap}` : 'مستوفى'}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <article class="day-card">
+          <div class="day-card-head">
+            <div>
+              <span class="day-name">${DAYS_AR[idx]}</span>
+              <span class="day-date">${formatArabicDate(date)}</span>
+            </div>
+            <div class="day-total-badge">${dayTotal} / ${dayNeed} صيدلي</div>
+          </div>
+          <div class="day-card-body">
+            ${shiftLines}
+          </div>
+        </article>
+      `;
+    }).join('');
+
+    $('sixDayGrid').innerHTML = dayCardsHtml;
+
+    $('kpiStaffTotal').textContent = state.employees.length;
+    $('tabStaffCountPill').textContent = state.employees.length;
+
+    $('kpiDeficitsTotal').textContent = totalDeficits;
+    if (totalDeficits > 0) {
+      $('tabDeficitPill').style.display = 'inline-block';
+      $('tabDeficitPill').textContent = totalDeficits;
+    } else {
+      $('tabDeficitPill').style.display = 'none';
+    }
+
+    const pendingCount = state.requests.filter(r => r.status === 'pending').length;
+    $('kpiPendingTotal').textContent = pendingCount;
+    $('tabRequestsCountPill').textContent = pendingCount;
+
+    const alertBox = $('deficitsAlertPanel');
+    if (totalDeficits > 0) {
+      alertBox.style.display = 'block';
+      $('deficitsListContainer').innerHTML = deficitsList.map(d => `
+        <div class="deficit-quick-item">
+          <div>
+            <strong>${d.dayName} (${formatArabicDate(d.date)})</strong>
+            <div>وردية ${d.shiftName} · متاح ${d.actual} من ${d.need}</div>
+          </div>
+          <strong style="font-size:15px;">عجز ${d.gap}</strong>
+        </div>
+      `).join('');
+    } else {
+      alertBox.style.display = 'none';
+    }
+  }
+
+  /* ----------------------------------------------------
+     RENDER: 2. ROSTER TABLE (SATURDAY - THURSDAY)
+     ---------------------------------------------------- */
+  function renderRoster() {
+    const query = ($('rosterSearch').value || '').toLowerCase().trim();
+
+    $('rosterTableHead').innerHTML = `
+      <tr>
+        <th class="emp-cell">اسم الموظف</th>
+        ${DAYS_AR.map((d, i) => `<th>${d}<br><small style="color:var(--text-muted);font-weight:600">${DAYS_EN[i]}</small></th>`).join('')}
+        <th>أيام العمل</th>
+        <th>الراحة (R)</th>
+        <th class="no-print">إجراء</th>
+      </tr>
+    `;
+
+    const filtered = state.employees.filter(e => {
+      if (!query) return true;
+      return e.name.toLowerCase().includes(query) || (e.code && e.code.includes(query));
+    });
+
+    $('reqStaffSelect').innerHTML = '<option value="">اختر الموظف...</option>' +
+      state.employees.map(e => `
+        <option value="${escapeHtml(e.id)}">${escapeHtml(e.name)}${e.code ? ` (${escapeHtml(e.code)})` : ''}</option>
+      `).join('');
+
+    if (filtered.length === 0) {
+      const emptyMessage = state.employees.length
+        ? 'لا يوجد موظفون يطابقون البحث.'
+        : 'لا يوجد موظفون بعد. استخدم «إضافة موظف» لبدء إعداد جدول الفرع.';
+      $('rosterTableBody').innerHTML = `
+        <tr><td colspan="10" style="padding:28px;color:var(--text-muted);font-weight:700;text-align:center;">${emptyMessage}</td></tr>
+      `;
+      return;
+    }
+
+    $('rosterTableBody').innerHTML = filtered.map(emp => {
+      const workingDays = emp.schedule.filter(s => s !== 'R' && s !== 'ج').length;
+      const offDays = emp.schedule.filter(s => s === 'R').length;
+
+      return `
+        <tr>
+          <td class="emp-cell">
+            <div class="emp-title">${escapeHtml(emp.name)}</div>
+            <div class="emp-code">كود: ${escapeHtml(emp.code || '—')}</div>
+          </td>
+
+          ${DAYS_AR.map((day, idx) => {
+            const currentShift = emp.schedule[idx] || 'R';
+            return `
+              <td>
+                <select class="shift-dropdown" data-emp="${escapeHtml(emp.id)}" data-day="${idx}">
+                  ${SYMBOLS.map(s => `
+                    <option value="${s.key}" ${currentShift === s.key ? 'selected' : ''}>
+                      ${s.key} - ${s.label.split('-')[1]?.trim() || s.key}
+                    </option>
+                  `).join('')}
+                </select>
+              </td>
+            `;
+          }).join('')}
+
+          <td style="font-weight:800;">${workingDays} أيام</td>
+          <td style="font-weight:800;color:var(--text-muted);">${offDays} R</td>
+          <td class="no-print">
+            <button type="button" class="btn btn-danger btn-sm btn-del-emp" data-id="${escapeHtml(emp.id)}">
+              حذف
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+  }
+
+  /* ----------------------------------------------------
+     RENDER: 3. LEAVE REQUESTS
+     ---------------------------------------------------- */
+  function renderRequests() {
+    const filter = $('reqFilterSelect').value;
+    const sorted = state.requests.slice().sort((a, b) => a.date.localeCompare(b.date));
+
+    const list = sorted.filter(r => {
+      if (filter === 'ALL') return true;
+      return r.status === filter;
+    });
+
+    if (list.length === 0) {
+      $('requestsTableBody').innerHTML = '';
+      $('requestsEmptyMsg').style.display = 'block';
+      return;
+    }
+    $('requestsEmptyMsg').style.display = 'none';
+
+    $('requestsTableBody').innerHTML = list.map(req => {
+      const emp = state.employees.find(e => e.id === req.employeeId);
+      const empName = emp ? emp.name : 'موظف محذوف';
+      const dayIdx = getDayIndex(req.date);
+      const dayName = DAYS_AR[dayIdx] || '—';
+      const shiftKey = employeeShiftOn(req.employeeId, req.date);
+      const shiftSpec = getShift(shiftKey);
+
+      let statusHtml = '';
+      if (req.status === 'approved') statusHtml = '<span class="req-badge approved">مقبولة</span>';
+      else if (req.status === 'rejected') statusHtml = '<span class="req-badge rejected">مرفوضة</span>';
+      else statusHtml = '<span class="req-badge pending">معلقة</span>';
+
+      let actions = '';
+      if (req.status === 'pending') {
+        actions = `
+          <button type="button" class="btn btn-success btn-sm btn-req-action" data-id="${req.id}" data-action="approved">اعتماد</button>
+          <button type="button" class="btn btn-danger btn-sm btn-req-action" data-id="${req.id}" data-action="rejected">رفض</button>
+        `;
+      } else {
+        actions = `
+          <button type="button" class="btn btn-secondary btn-sm btn-req-action" data-id="${req.id}" data-action="pending">إعادة فتح</button>
+        `;
+      }
+
+      return `
+        <tr>
+          <td style="text-align:right;padding-right:14px;font-weight:800;">${escapeHtml(empName)}</td>
+          <td>${formatArabicDate(req.date)}</td>
+          <td>${dayName}</td>
+          <td>${shiftBadgeHtml(shiftKey)} <span style="font-size:12px;color:var(--text-muted)">${shiftSpec ? shiftSpec.name : 'راحة'}</span></td>
+          <td style="font-size:13px;max-width:200px;">${escapeHtml(req.note || '—')}</td>
+          <td>${statusHtml}</td>
+          <td class="no-print">
+            ${actions}
+            <button type="button" class="btn btn-secondary btn-sm btn-req-action" data-id="${req.id}" data-action="delete" title="حذف">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  /* ----------------------------------------------------
+     RENDER: 4. SETTINGS
+     ---------------------------------------------------- */
+  function renderSettings() {
+    $('minInputsContainer').innerHTML = SHIFTS.map(s => {
+      const val = Number(state.minimums[s.key] ?? s.defaultMin);
+      return `
+        <div style="background:var(--bg-card-subtle);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-weight:800">${s.name} (${s.time})</span>
+            ${shiftBadgeHtml(s.key)}
+          </div>
+          <input type="number" id="min_${s.key}" min="0" max="50" value="${val}" 
+                 style="width:100%;padding:8px;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-input);color:var(--text-primary);font-weight:800;">
+        </div>
+      `;
+    }).join('');
+  }
+
+  /* ----------------------------------------------------
+     MASTER RENDER
+     ---------------------------------------------------- */
+  function renderAll() {
+    $('weekStartDate').value = currentWeekSaturday;
+    renderLegends();
+    renderDashboard();
+    renderRoster();
+    renderRequests();
+    renderSettings();
+  }
+
+  /* ----------------------------------------------------
+     EVENTS & USER INTERACTIONS
+     ---------------------------------------------------- */
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.view-pane').forEach(v => v.classList.toggle('active', v.id === 'view-' + btn.dataset.tab));
+    });
+  });
+
+  $('loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!firebaseAuth) {
+      setLoginMessage('خدمة تسجيل الدخول غير متاحة. تحقق من إعدادات Firebase.');
+      return;
+    }
+    const email = $('loginEmail').value.trim();
+    const password = $('loginPassword').value;
+    $('loginButton').disabled = true;
+    setLoginMessage('جارٍ التحقق من بيانات الدخول...');
+    try {
+      await firebaseAuth.signInWithEmailAndPassword(email, password);
+      $('loginPassword').value = '';
+    } catch (err) {
+      console.error('Sign-in failed:', err);
+      const messages = {
+        'auth/invalid-credential': 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+        'auth/user-disabled': 'هذا الحساب موقوف. تواصل مع مسؤول النظام.',
+        'auth/too-many-requests': 'محاولات كثيرة؛ انتظر قليلاً ثم حاول مجدداً.',
+        'auth/network-request-failed': 'تعذر الاتصال. تحقق من الإنترنت ثم حاول مجدداً.'
+      };
+      setLoginMessage(messages[err.code] || 'تعذر تسجيل الدخول. تحقق من بيانات الحساب وإعدادات Firebase.');
+    } finally {
+      $('loginButton').disabled = false;
+    }
+  });
+
+  $('resetPasswordButton').addEventListener('click', async () => {
+    if (!firebaseAuth) {
+      setLoginMessage('خدمة تسجيل الدخول غير متاحة. تحقق من إعدادات Firebase.');
+      return;
+    }
+    const email = $('loginEmail').value.trim();
+    if (!email) {
+      setLoginMessage('اكتب البريد الإلكتروني أولاً لإرسال رابط إعادة تعيين كلمة المرور.');
+      $('loginEmail').focus();
+      return;
+    }
+    try {
+      await firebaseAuth.sendPasswordResetEmail(email);
+      setLoginMessage('إذا كان البريد مرتبطاً بحساب، فسيصلك رابط إعادة التعيين.');
+    } catch (err) {
+      console.error('Password reset request failed:', err);
+      setLoginMessage('تعذر إرسال رابط إعادة التعيين. تحقق من البريد وإعدادات Firebase.');
+    }
+  });
+
+  $('signOutButton').addEventListener('click', async () => {
+    try {
+      await firebaseAuth.signOut();
+    } catch (err) {
+      console.error('Sign-out failed:', err);
+      showToast('تعذر تسجيل الخروج. أعد المحاولة.');
+    }
+  });
+
+  $('syncBadgeIndicator').addEventListener('click', () => {
+    document.querySelector('.tab-btn[data-tab="settings"]').click();
+    $('fbApiKey').focus();
+  });
+
+  $('btnPrevWeek').addEventListener('click', () => {
+    currentWeekSaturday = addDays(currentWeekSaturday, -7);
+    renderAll();
+  });
+
+  $('btnNextWeek').addEventListener('click', () => {
+    currentWeekSaturday = addDays(currentWeekSaturday, 7);
+    renderAll();
+  });
+
+  $('btnCurrentWeek').addEventListener('click', () => {
+    currentWeekSaturday = getSaturdayOf(toISO(new Date()));
+    renderAll();
+    showToast('تمت العودة للأسبوع الحالي');
+  });
+
+  $('weekStartDate').addEventListener('change', e => {
+    if (!e.target.value) return;
+    currentWeekSaturday = getSaturdayOf(e.target.value);
+    renderAll();
+  });
+
+  $('btnQuickLeave').addEventListener('click', () => {
+    document.querySelector('.tab-btn[data-tab="requests"]').click();
+    $('reqStaffSelect').focus();
+  });
+
+  $('rosterSearch').addEventListener('input', renderRoster);
+
+  $('rosterTableBody').addEventListener('change', e => {
+    const sel = e.target.closest('select[data-emp]');
+    if (!sel) return;
+    const emp = state.employees.find(x => x.id === sel.dataset.emp);
+    if (!emp) return;
+    const day = Number(sel.dataset.day);
+    emp.schedule[day] = sel.value;
+    save();
+    renderDashboard();
+    showToast(`تم تعديل وردية ${emp.name}`);
+  });
+
+  $('rosterTableBody').addEventListener('click', e => {
+    const btn = e.target.closest('.btn-del-emp');
+    if (!btn) return;
+    const emp = state.employees.find(x => x.id === btn.dataset.id);
+    if (!emp) return;
+
+    showConfirm('حذف موظف', `هل تريد حذف ${emp.name} من الجدول؟`, () => {
+      state.employees = state.employees.filter(x => x.id !== emp.id);
+      state.requests = state.requests.filter(r => r.employeeId !== emp.id);
+      save();
+      renderAll();
+      showToast('تم حذف الموظف');
+    });
+  });
+
+  $('btnOpenAddStaff').addEventListener('click', () => {
+    $('addStaffModal').classList.add('open');
+    $('newStaffName').focus();
+  });
+
+  $('btnCloseStaffModal').addEventListener('click', () => {
+    $('addStaffModal').classList.remove('open');
+  });
+
+  $('addStaffForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = $('newStaffName').value.trim();
+    const code = $('newStaffCode').value.trim();
+    const sh = $('newStaffShift').value;
+
+    if (!name) return;
+    if (code && state.employees.some(x => x.code === code)) {
+      showToast('الرقم الوظيفي موجود بالفعل');
+      return;
+    }
+
+    state.employees.push({
+      id: uid('emp'),
+      name,
+      code,
+      schedule: Array(6).fill(sh)
+    });
+
+    save();
+    $('addStaffModal').classList.remove('open');
+    $('addStaffForm').reset();
+    renderAll();
+    showToast('تمت إضافة الموظف بنجاح');
+  });
+
+  $('directLeaveForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const empId = $('reqStaffSelect').value;
+    const date = $('reqDateField').value;
+    const note = $('reqNoteField').value.trim();
+
+    if (!empId || !date) return;
+
+    if (isFriday(date)) {
+      showToast('يوم الجمعة غير مدرج في جدول الدوام (السبت إلى الخميس)');
+      return;
+    }
+
+    const exists = state.requests.some(r => r.employeeId === empId && r.date === date && r.status !== 'rejected');
+    if (exists) {
+      showToast('يوجد طلب مسجل مسبقاً لهذا الموظف في هذا اليوم');
+      return;
+    }
+
+    state.requests.push({
+      id: uid('req'),
+      employeeId: empId,
+      date,
+      note,
+      status: 'pending',
+      createdAt: Date.now()
+    });
+
+    save();
+    $('reqNoteField').value = '';
+    renderAll();
+    showToast('تم تسجيل طلب الإجازة بنجاح');
+  });
+
+  $('reqFilterSelect').addEventListener('change', renderRequests);
+
+  $('requestsTableBody').addEventListener('click', e => {
+    const btn = e.target.closest('.btn-req-action');
+    if (!btn) return;
+    const req = state.requests.find(x => x.id === btn.dataset.id);
+    if (!req) return;
+
+    const action = btn.dataset.action;
+    if (action === 'delete') {
+      showConfirm('حذف طلب إجازة', 'هل تريد حذف هذا الطلب نهائياً؟', () => {
+        state.requests = state.requests.filter(x => x.id !== req.id);
+        save();
+        renderAll();
+        showToast('تم حذف الطلب');
+      });
+    } else {
+      req.status = action;
+      save();
+      renderAll();
+      showToast(action === 'approved' ? 'تم اعتماد الإجازة وتحديث التغطية' : (action === 'rejected' ? 'تم رفض الطلب' : 'تمت إعادة فتح الطلب'));
+    }
+  });
+
+  $('minConfigForm').addEventListener('submit', e => {
+    e.preventDefault();
+    for (const s of SHIFTS) {
+      const input = $('min_' + s.key);
+      if (input) {
+        state.minimums[s.key] = Math.max(0, Number(input.value));
+      }
+    }
+    save();
+    renderAll();
+    showToast('تم حفظ الحدود الدنيا بنجاح');
+  });
+
+  $('firebaseSettingsForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const apiKey = $('fbApiKey').value.trim();
+    const projectId = $('fbProjectId').value.trim();
+    const appId = $('fbAppId').value.trim();
+    const branchId = $('fbBranchId').value.trim() || 'united_pharmacy_main_branch';
+    if (!apiKey || !projectId || !appId) {
+      showToast('أكمل مفتاح API ومعرّف المشروع والتطبيق قبل الحفظ.');
+      return;
+    }
+
+    const customCfg = {
+      apiKey,
+      authDomain: `${projectId}.firebaseapp.com`,
+      projectId,
+      storageBucket: `${projectId}.firebasestorage.app`,
+      appId,
+      branchId
+    };
+
+    try {
+      localStorage.setItem(FB_SETTINGS_KEY, JSON.stringify(customCfg));
+    } catch (err) {
+      console.error('تعذر حفظ إعدادات Firebase:', err);
+      showToast('تعذر حفظ الإعدادات على هذا الجهاز.');
+      return;
+    }
+    showToast('تم حفظ الإعدادات. ستتم إعادة تحميل الاتصال الآن.');
+    window.location.reload();
+  });
+
+  $('btnSyncToCloud').addEventListener('click', async () => {
+    if (!isCloudActive) {
+      showToast('قاعدة البيانات غير متصلة حالياً.');
+      return;
+    }
+    if (await pushToCloud()) showToast('تم حفظ البيانات في قاعدة البيانات.');
+  });
+
+  function downloadBackup() {
+    const data = {
+      app: 'United Pharmacy Planner',
+      version: 4,
+      exportDate: new Date().toISOString(),
+      currentWeekSaturday,
+      state
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `United_Pharmacy_Backup_${toISO(new Date())}.json`;
+    a.click();
+    showToast('تم تنزيل النسخة الاحتياطية');
+  }
+
+  function downloadCsv() {
+    const dates = Array.from({ length: 6 }, (_, i) => addDays(currentWeekSaturday, i));
+    const header = ['اسم الموظف', 'الكود', ...DAYS_AR.map((d, i) => `${d} (${dates[i]})`), 'أيام العمل', 'أيام الراحة'];
+    const rows = state.employees.map(e => [
+      `"${e.name}"`,
+      `"${e.code || ''}"`,
+      ...e.schedule.map(s => `"${s}"`),
+      e.schedule.filter(s => s !== 'R' && s !== 'ج').length,
+      e.schedule.filter(s => s === 'R').length
+    ]);
+
+    const csv = '\uFEFF' + [header.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `United_Pharmacy_Roster_${currentWeekSaturday}.csv`;
+    a.click();
+    showToast('تم تنزيل ملف Excel (CSV)');
+  }
+
+  $('btnExportJson').addEventListener('click', downloadBackup);
+  $('btnDownloadJson2').addEventListener('click', downloadBackup);
+  $('btnExportCsv').addEventListener('click', downloadCsv);
+  $('btnPrint').addEventListener('click', () => window.print());
+
+  $('fileImportInput').addEventListener('change', async e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const incoming = parsed.state || parsed;
+      if (!incoming || !Array.isArray(incoming.employees) || !incoming.minimums) {
+        throw new Error('Invalid');
+      }
+
+      showConfirm('استيراد نسخة احتياطية', 'سيتم استبدال البيانات الحالية بالكامل بالبيانات المستوردة. هل تريد المتابعة؟', () => {
+        state = incoming;
+        state.employees = state.employees.map(e => ({
+          ...e,
+          schedule: (e.schedule || []).slice(0, 6)
+        }));
+        if (parsed.currentWeekSaturday) currentWeekSaturday = parsed.currentWeekSaturday;
+        save();
+        renderAll();
+        showToast('تم استيراد النسخة بنجاح');
+      });
+    } catch (err) {
+      showToast('تعذر قراءة الملف. تأكد أنه ملف نسخة احتياطية سليم.');
+    } finally {
+      e.target.value = '';
+    }
+  });
+
+  $('btnResetAll').addEventListener('click', () => {
+    showConfirm('مسح بيانات الفرع', 'سيتم حذف جميع الموظفين والإجازات وإعادة إعدادات التغطية الافتراضية. هل تريد المتابعة؟', () => {
+      state = createInitialState();
+      currentWeekSaturday = getSaturdayOf(toISO(new Date()));
+      save();
+      renderAll();
+      showToast('تم مسح بيانات الفرع وإعادة الإعدادات الافتراضية');
+    });
+  });
+
+  const todayIso = toISO(new Date());
+  $('reqDateField').value = isFriday(todayIso) ? addDays(todayIso, 1) : todayIso;
+
+  // Run render first for instant display
+  renderAll();
+
+  // Initialize Firebase Cloud Backend in background
+  initFirebaseBackend();
+
+})();
+</script>
+</body>
+</html>
